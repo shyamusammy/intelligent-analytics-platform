@@ -94,6 +94,22 @@ class DatasetStatus:
     READY = "ready"
 
 
+class ETLConstants:
+    """
+    Configuration values used throughout the ETL Engine.
+    """
+
+    # --------------------------------------------------
+    # Datatype Inference
+    # --------------------------------------------------
+
+    DATETIME_DETECTION_THRESHOLD = 0.95
+
+    CATEGORICAL_UNIQUE_RATIO = 0.05
+
+    MAX_CATEGORICAL_UNIQUE_VALUES = 50
+
+
 # ==========================================================
 # Version
 # ==========================================================
