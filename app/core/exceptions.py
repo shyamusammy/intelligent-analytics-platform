@@ -194,3 +194,10 @@ class QualityAnalysisError(ETLError):
     """
 
     pass
+
+
+class ProfilingArtifactNotFoundError(ETLError):
+    """
+    Raised when the ETL profiling artifact is not found.
+    """
+    pass

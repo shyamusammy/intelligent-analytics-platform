@@ -86,22 +86,31 @@ class DataTypeInferenceService:
         if clean_series.empty:
             return DetectedDataType.UNKNOWN
 
-        # --------------------------------------------------
+        # ------------------------------------------
         # Datetime Detection
-        # --------------------------------------------------
+        # ------------------------------------------
 
-        converted = pd.to_datetime(
-            clean_series,
-            errors="coerce",
-        )
+        sample = clean_series.astype(str).head(10)
 
-        success_rate = converted.notna().mean()
+        looks_like_datetime = sample.str.contains(
+             r"[-/:]",
+            regex=True,
+        ).any()
 
-        if (
-            success_rate
-            >= ETLConstants.DATETIME_DETECTION_THRESHOLD
-        ):
-            return DetectedDataType.DATETIME
+        if looks_like_datetime:
+
+            converted = pd.to_datetime(
+                clean_series,
+                errors="coerce",
+            )
+
+            success_rate = converted.notna().mean()
+
+            if (
+                success_rate
+                >= ETLConstants.DATETIME_DETECTION_THRESHOLD
+            ):
+                return DetectedDataType.DATETIME
 
         # --------------------------------------------------
         # Categorical Detection
