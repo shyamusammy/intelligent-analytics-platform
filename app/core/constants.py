@@ -122,6 +122,20 @@ class ETLArtifacts:
 
 
 # ==========================================================
+# ML Constants
+# ==========================================================
+
+class MLConstants:
+    MINIMUM_ROWS = 30
+    MINIMUM_FEATURE_COLUMNS = 2
+
+    MAX_CLASSIFICATION_UNIQUE_VALUES = 20
+    CLASSIFICATION_UNIQUE_RATIO = 0.05
+
+    TEST_SIZE = 0.2
+    RANDOM_STATE = 42
+
+# ==========================================================
 # Version
 # ==========================================================
 
