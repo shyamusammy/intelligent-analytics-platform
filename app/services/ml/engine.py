@@ -1,33 +1,68 @@
-from pandas import DataFrame
+from app.repositories.dataset_repository import (
+    DatasetRepository,
+)
 
-from app.schemas.ml import MLEngineResult
+from app.schemas.ml import (
+    MLEngineResult,
+)
 
-from app.services.ml.detector import MLDetector
-from app.services.ml.evaluator import ModelEvaluator
-from app.services.ml.selector import ModelSelector
-from app.services.ml.trainer import ModelTrainer
-from app.services.ml.validator import MLValidator
+from app.services.ml.detector import (
+    MLDetector,
+)
 
+from app.services.ml.evaluator import (
+    ModelEvaluator,
+)
+
+from app.services.ml.selector import (
+    ModelSelector,
+)
+
+from app.services.ml.trainer import (
+    ModelTrainer,
+)
+
+from app.services.ml.validator import (
+    MLValidator,
+)
+
+from app.services.ml.preprocessor import (
+    MLPreprocessor,
+)
+
+from app.schemas.context import (
+    KnowledgeContext,
+)
 
 class MLEngine:
     """
     Orchestrates the complete machine learning workflow.
 
-    Workflow:
-        Validation
-            ↓
-        Task Detection
-            ↓
-        Model Selection
-            ↓
-        Model Training
-            ↓
-        Model Evaluation
+    Responsibilities
+    ----------------
+    - Load dataset
+    - Validate dataset
+    - Detect ML task
+    - Select candidate models
+    - Train models
+    - Evaluate trained models
+
+    This engine contains NO business logic.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        dataset_repository: DatasetRepository | None = None,
+    ) -> None:
+
+        self._dataset_repository = (
+            dataset_repository
+            or DatasetRepository()
+        )
 
         self._validator = MLValidator()
+
+        self._preprocessor = MLPreprocessor()
 
         self._detector = MLDetector()
 
@@ -37,11 +72,25 @@ class MLEngine:
 
         self._evaluator = ModelEvaluator()
 
+    # ==========================================================
+    # PUBLIC
+    # ==========================================================
+
     def run(
         self,
-        dataframe: DataFrame,
+        workspace_id: str,
+        dataset_id: str,
         target_column: str,
+        knowledge: KnowledgeContext,
     ) -> MLEngineResult:
+        """
+        Execute the complete machine learning workflow.
+        """
+
+        dataframe = self._load_dataset(
+            workspace_id,
+            dataset_id,
+        )
 
         validation = self._validator.validate(
             dataframe=dataframe,
@@ -57,6 +106,12 @@ class MLEngine:
         evaluation_result = None
 
         if validation.valid:
+
+            dataframe = self._preprocessor.prepare(
+                dataframe=dataframe,
+                target_column=target_column,
+                knowledge=knowledge,
+            )
 
             task_type = self._detector.detect(
                 dataframe=dataframe,
@@ -84,4 +139,22 @@ class MLEngine:
             estimators=estimators,
             train_result=train_result,
             evaluation_result=evaluation_result,
+        )
+
+    # ==========================================================
+    # PRIVATE
+    # ==========================================================
+
+    def _load_dataset(
+        self,
+        workspace_id: str,
+        dataset_id: str,
+    ):
+        """
+        Load the dataset into a pandas DataFrame.
+        """
+
+        return self._dataset_repository.load_dataframe(
+            workspace_id,
+            dataset_id,
         )

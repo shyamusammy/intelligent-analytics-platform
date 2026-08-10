@@ -1,36 +1,35 @@
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 import shutil
-
-from app.repositories.workspace_repository import (
-    WorkspaceRepository,
-)
 
 from app.repositories.dataset_repository import (
     DatasetRepository,
 )
 
-from app.services.etl.pipeline.etl_pipeline import (
-    ETLPipeline,
-)
-
-from app.services.analytics.analytics_engine import (
-    AnalyticsEngine,
-)
-
-from app.services.ml.engine import (
-    MLEngine,
+from app.repositories.workspace_repository import (
+    WorkspaceRepository,
 )
 
 from app.schemas.context import (
     KnowledgeContext,
 )
 
+from app.services.analytics.analytics_engine import (
+    AnalyticsEngine,
+)
+
+from app.services.etl.pipeline.etl_pipeline import (
+    ETLPipeline,
+)
+
+from app.services.ml.engine import (
+    MLEngine,
+)
 
 
 def main() -> None:
 
-    workspace_id = "ws_ml"
+    workspace_id = "ws_ml_pipeline"
     dataset_id = "ds_sales"
 
     sample_dataset = Path(
@@ -52,7 +51,7 @@ def main() -> None:
         )
 
     # ======================================================
-    # CREATE WORKSPACE
+    # CREATE REPOSITORIES
     # ======================================================
 
     workspace_repository = (
@@ -63,9 +62,13 @@ def main() -> None:
         DatasetRepository()
     )
 
+    # ======================================================
+    # CREATE WORKSPACE
+    # ======================================================
+
     workspace_metadata = {
         "workspace_id": workspace_id,
-        "name": "ML Test Workspace",
+        "name": "ML Pipeline Test Workspace",
     }
 
     workspace_path = (
@@ -113,8 +116,12 @@ def main() -> None:
     )
 
     # ======================================================
-    # STEP 1 : ETL
+    # STEP 1 : ETL PIPELINE
     # ======================================================
+
+    print("=" * 70)
+    print("STEP 1 : ETL PIPELINE")
+    print("=" * 70)
 
     etl_pipeline = ETLPipeline()
 
@@ -122,10 +129,6 @@ def main() -> None:
         workspace_id=workspace_id,
         dataset_id=dataset_id,
     )
-
-    print("=" * 70)
-    print("STEP 1 : ETL PIPELINE")
-    print("=" * 70)
 
     print(
         f"Quality Score : "
@@ -138,8 +141,13 @@ def main() -> None:
     )
 
     # ======================================================
-    # STEP 2 : ANALYTICS
+    # STEP 2 : ANALYTICS PIPELINE
     # ======================================================
+
+    print()
+    print("=" * 70)
+    print("STEP 2 : ANALYTICS ENGINE")
+    print("=" * 70)
 
     analytics_engine = AnalyticsEngine()
 
@@ -148,14 +156,14 @@ def main() -> None:
         dataset_id=dataset_id,
     )
 
-    print()
-    print("=" * 70)
-    print("STEP 2 : ANALYTICS ENGINE")
-    print("=" * 70)
-
     print(
         f"Numeric Columns : "
         f"{len(analytics_result.statistics.numeric_statistics)}"
+    )
+
+    print(
+        f"Categorical Columns : "
+        f"{len(analytics_result.statistics.categorical_statistics)}"
     )
 
     print(
@@ -168,8 +176,18 @@ def main() -> None:
         f"{len(analytics_result.trends.trends)}"
     )
 
+    print(
+        f"Segments : "
+        f"{len(analytics_result.segmentation.segments)}"
+    )
+
+    print(
+        f"Business Insights : "
+        f"{len(analytics_result.insights.insights)}"
+    )
+
     # ======================================================
-    # CREATE ML KNOWLEDGE CONTEXT
+    # CREATE KNOWLEDGE CONTEXT
     # ======================================================
 
     knowledge = KnowledgeContext(
@@ -180,51 +198,77 @@ def main() -> None:
     # STEP 3 : ML ENGINE
     # ======================================================
 
+    print()
+    print("=" * 70)
+    print("STEP 3 : ML ENGINE")
+    print("=" * 70)
+
     ml_engine = MLEngine()
 
-    result = ml_engine.run(
+    ml_result = ml_engine.run(
         workspace_id=workspace_id,
         dataset_id=dataset_id,
         target_column="Revenue",
         knowledge=knowledge,
     )
 
-    print()
-    print("=" * 70)
-    print("STEP 3 : ML ENGINE")
-    print("=" * 70)
+    # ======================================================
+    # ML VALIDATION
+    # ======================================================
 
     print(
         f"Validation Passed : "
-        f"{result.validation.valid}"
+        f"{ml_result.validation.valid}"
     )
+
+    if ml_result.validation.errors:
+
+        print("Validation Errors:")
+
+        for error in ml_result.validation.errors:
+            print(
+                f"  - {error}"
+            )
+
+    if ml_result.validation.warnings:
+
+        print("Validation Warnings:")
+
+        for warning in ml_result.validation.warnings:
+            print(
+                f"  - {warning}"
+            )
+
+    # ======================================================
+    # ML SUMMARY
+    # ======================================================
 
     print(
         f"Detected ML Task : "
-        f"{result.task_type.value if result.task_type else None}"
+        f"{ml_result.task_type.value}"
     )
 
     print(
         f"Candidate Models Selected : "
-        f"{len(result.estimators)}"
+        f"{len(ml_result.estimators)}"
     )
 
-    if result.train_result is not None:
+    if ml_result.train_result is not None:
 
         print(
             f"Models Successfully Trained : "
-            f"{len(result.train_result.models)}"
+            f"{len(ml_result.train_result.models)}"
         )
 
-    if result.evaluation_result is not None:
+    if ml_result.evaluation_result is not None:
 
         print(
             f"Models Successfully Evaluated : "
-            f"{len(result.evaluation_result.models)}"
+            f"{len(ml_result.evaluation_result.models)}"
         )
 
         best_model = (
-            result.evaluation_result.best_model
+            ml_result.evaluation_result.best_model
         )
 
         print(
@@ -236,17 +280,22 @@ def main() -> None:
     # MODEL EVALUATION
     # ======================================================
 
-    if result.evaluation_result is not None:
+    if ml_result.evaluation_result is not None:
 
         print()
         print("=" * 70)
         print("MODEL EVALUATION")
         print("=" * 70)
 
-        for model in result.evaluation_result.models:
+        for evaluated_model in (
+            ml_result.evaluation_result.models
+        ):
 
             estimator = (
-                model.trained_model.estimator.value
+                evaluated_model
+                .trained_model
+                .estimator
+                .value
             )
 
             print()
@@ -254,9 +303,14 @@ def main() -> None:
                 f"Estimator : {estimator}"
             )
 
-            if result.task_type.value == "regression":
+            if (
+                ml_result.task_type.value
+                == "regression"
+            ):
 
-                metrics = model.metrics
+                metrics = (
+                    evaluated_model.metrics
+                )
 
                 print(
                     f"R² Score : "
@@ -270,7 +324,9 @@ def main() -> None:
 
             else:
 
-                metrics = model.metrics
+                metrics = (
+                    evaluated_model.metrics
+                )
 
                 print(
                     f"Accuracy : "
@@ -282,9 +338,44 @@ def main() -> None:
                     f"{metrics.f1_score:.4f}"
                 )
 
+    # ======================================================
+    # FINAL PIPELINE VALIDATION
+    # ======================================================
+
+    assert etl_profile is not None
+
+    assert analytics_result is not None
+
+    assert ml_result is not None
+
+    assert ml_result.validation.valid
+
+    assert ml_result.task_type is not None
+
+    assert len(
+        ml_result.estimators
+    ) > 0
+
+    assert ml_result.train_result is not None
+
+    assert len(
+        ml_result.train_result.models
+    ) > 0
+
+    assert ml_result.evaluation_result is not None
+
+    assert len(
+        ml_result.evaluation_result.models
+    ) > 0
+
+    assert (
+        ml_result.evaluation_result.best_model
+        is not None
+    )
+
     print()
     print("=" * 70)
-    print("ML ENGINE EXECUTED SUCCESSFULLY.")
+    print("ML PIPELINE EXECUTED SUCCESSFULLY")
     print("=" * 70)
 
 

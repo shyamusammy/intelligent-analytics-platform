@@ -201,3 +201,46 @@ class ProfilingArtifactNotFoundError(ETLError):
     Raised when the ETL profiling artifact is not found.
     """
     pass
+
+    
+# ==========================================================
+# Analytics Exceptions
+# ==========================================================
+
+class AnalyticsError(AnalyticsPlatformError):
+    """
+    Base class for all analytics-related exceptions.
+    """
+
+    pass
+
+
+class AnalyticsDirectoryNotFoundError(AnalyticsError):
+    """
+    Raised when the analytics artifact directory
+    does not exist.
+    """
+
+    def __init__(
+        self,
+        workspace_id: str,
+    ):
+        super().__init__(
+            f"Analytics artifacts directory for workspace "
+            f"'{workspace_id}' was not found."
+        )
+
+
+class AnalyticsArtifactNotFoundError(AnalyticsError):
+    """
+    Raised when an analytics artifact file
+    does not exist.
+    """
+
+    def __init__(
+        self,
+        artifact_name: str,
+    ):
+        super().__init__(
+            f"Analytics artifact '{artifact_name}' was not found."
+        )

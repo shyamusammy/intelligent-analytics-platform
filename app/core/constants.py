@@ -45,6 +45,8 @@ class ArtifactFolders:
 
     AI = "ai"
 
+    ANALYTICS = "analytics"
+
 
 # ==========================================================
 # Dataset
@@ -134,6 +136,29 @@ class MLConstants:
 
     TEST_SIZE = 0.2
     RANDOM_STATE = 42
+
+
+# ==========================================================
+# Analytics Artifacts
+# ==========================================================
+
+class AnalyticsArtifacts:
+
+    STATISTICS_FILE = "statistics.json"
+
+    KPIS_FILE = "kpis.json"
+
+    CORRELATIONS_FILE = "correlations.json"
+
+    TRENDS_FILE = "trends.json"
+
+    SEGMENTATION_FILE = "segmentation.json"
+
+    INSIGHTS_FILE = "insights.json"
+
+    ANALYTICS_FILE = "analytics.json"
+
+
 
 # ==========================================================
 # Version

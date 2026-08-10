@@ -2,6 +2,8 @@ from pathlib import Path
 import json
 import shutil
 
+import pandas as pd
+
 from app.core.constants import (
     WorkspaceFolders,
     DatasetFolders,
@@ -12,6 +14,7 @@ from app.core.exceptions import (
     DatasetNotFoundError,
     DatasetMetadataNotFoundError,
     OriginalDatasetNotFoundError,
+    UnsupportedDatasetFormatError,
 )
 
 from app.schemas.dataset import DatasetMetadata
@@ -27,6 +30,7 @@ class DatasetRepository:
     - Save original uploaded files
     - Save dataset metadata
     - Load dataset metadata
+    - Load dataset as DataFrame
     - Locate dataset directories
     - Locate original dataset files
 
@@ -148,7 +152,9 @@ class DatasetRepository:
         )
 
         if not dataset_path.exists():
-            raise DatasetNotFoundError(dataset_id)
+            raise DatasetNotFoundError(
+                dataset_id,
+            )
 
         return dataset_path
 
@@ -173,7 +179,7 @@ class DatasetRepository:
 
         if not metadata_file.exists():
             raise DatasetMetadataNotFoundError(
-                dataset_id
+                dataset_id,
             )
 
         with open(
@@ -213,12 +219,63 @@ class DatasetRepository:
 
         if not files:
             raise OriginalDatasetNotFoundError(
-                dataset_id
+                dataset_id,
             )
 
         if len(files) > 1:
             raise OriginalDatasetNotFoundError(
-                dataset_id
+                dataset_id,
             )
 
         return files[0]
+
+    def load_dataframe(
+        self,
+        workspace_id: str,
+        dataset_id: str,
+    ) -> pd.DataFrame:
+        """
+        Loads the original dataset into a pandas DataFrame.
+        """
+
+        dataset_file = self.get_original_file(
+            workspace_id,
+            dataset_id,
+        )
+
+        return self._read_dataframe(
+            dataset_file,
+        )
+
+    # ==========================================================
+    # PRIVATE
+    # ==========================================================
+
+    def _read_dataframe(
+        self,
+        dataset_file: Path,
+    ) -> pd.DataFrame:
+        """
+        Reads a dataset file into a pandas DataFrame.
+        """
+
+        suffix = dataset_file.suffix.lower()
+
+        if suffix == ".csv":
+
+            return pd.read_csv(
+                dataset_file,
+            )
+
+        if suffix in (
+            ".xlsx",
+            ".xls",
+        ):
+
+            return pd.read_excel(
+                dataset_file,
+            )
+
+        raise UnsupportedDatasetFormatError(
+            suffix,
+        )

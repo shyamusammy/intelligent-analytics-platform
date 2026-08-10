@@ -1,0 +1,6 @@
+Date,Revenue,Profit,Inventory,Region,Department
+2025-01-01,100,20,500,North,Sales
+2025-02-01,150,35,480,South,Sales
+2025-03-01,200,50,460,East,HR
+2025-04-01,250,60,430,North,Finance
+2025-05-01,300,70,400,West,Sales
