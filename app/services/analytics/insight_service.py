@@ -13,6 +13,7 @@ from app.schemas.analytics import (
     SegmentationResult,
     StatisticsResult,
     TrendResult,
+    NumericColumnStatistics,
 )
 
 
@@ -24,6 +25,7 @@ class InsightService:
     Responsibilities
     ----------------
     - Generate dataset insights
+    - Generate statistical insights
     - Generate KPI insights
     - Generate correlation insights
     - Generate trend insights
@@ -32,6 +34,12 @@ class InsightService:
     This service contains NO analytical calculations
     and NO persistence logic.
     """
+
+    # ==========================================================
+    # THRESHOLDS
+    # ==========================================================
+
+    STRONG_SKEWNESS_THRESHOLD = 1.0
 
     # ==========================================================
     # PUBLIC
@@ -49,11 +57,13 @@ class InsightService:
         Generate business insights from analytical results.
         """
 
-        # Statistics is intentionally accepted even though it is
-        # not yet used. Future versions will generate insights
-        # for skewness, outliers, variance, etc.
-
         insights: list[Insight] = []
+
+        insights.extend(
+            self._build_statistics_insights(
+                statistics,
+            )
+        )
 
         insights.extend(
             self._build_kpi_insights(
@@ -82,6 +92,115 @@ class InsightService:
         return InsightResult(
             insights=insights,
         )
+
+    # ==========================================================
+    # STATISTICAL INSIGHTS
+    # ==========================================================
+
+    def _build_statistics_insights(
+        self,
+        statistics: StatisticsResult,
+    ) -> list[Insight]:
+        """
+        Generate insights from numeric statistics.
+
+        Statistical calculations are performed by
+        StatisticsService. This method only interprets
+        the resulting statistics.
+        """
+
+        insights: list[Insight] = []
+
+        for metric in statistics.numeric_statistics:
+
+            insights.extend(
+                self._build_numeric_column_insights(
+                    metric,
+                )
+            )
+
+        return insights
+
+    def _build_numeric_column_insights(
+        self,
+        metric: NumericColumnStatistics,
+    ) -> list[Insight]:
+        """
+        Generate insights for an individual numeric column.
+        """
+
+        insights: list[Insight] = []
+
+        # ------------------------------------------------------
+        # Constant / No Variation
+        # ------------------------------------------------------
+
+        if metric.minimum == metric.maximum:
+
+            insights.append(
+                Insight(
+                    title="No Variation",
+                    description=(
+                        f"{metric.column_name} has no variation "
+                        f"across the dataset because all observed "
+                        f"values are identical."
+                    ),
+                    category=InsightCategory.DATASET,
+                    severity=InsightSeverity.MEDIUM,
+                )
+            )
+
+            return insights
+
+        # ------------------------------------------------------
+        # Strong Right Skew
+        # ------------------------------------------------------
+
+        if (
+            metric.skewness
+            >= self.STRONG_SKEWNESS_THRESHOLD
+        ):
+
+            insights.append(
+                Insight(
+                    title="Right-Skewed Distribution",
+                    description=(
+                        f"{metric.column_name} shows a strongly "
+                        f"right-skewed distribution, indicating "
+                        f"that a relatively small number of "
+                        f"high-value records may be influencing "
+                        f"the average."
+                    ),
+                    category=InsightCategory.DATASET,
+                    severity=InsightSeverity.INFO,
+                )
+            )
+
+        # ------------------------------------------------------
+        # Strong Left Skew
+        # ------------------------------------------------------
+
+        elif (
+            metric.skewness
+            <= -self.STRONG_SKEWNESS_THRESHOLD
+        ):
+
+            insights.append(
+                Insight(
+                    title="Left-Skewed Distribution",
+                    description=(
+                        f"{metric.column_name} shows a strongly "
+                        f"left-skewed distribution, indicating "
+                        f"that a relatively small number of "
+                        f"low-value records may be influencing "
+                        f"the distribution."
+                    ),
+                    category=InsightCategory.DATASET,
+                    severity=InsightSeverity.INFO,
+                )
+            )
+
+        return insights
 
     # ==========================================================
     # KPI INSIGHTS

@@ -190,7 +190,7 @@ class StatisticsService:
     def _build_categorical_statistics(
         self,
         dataframe: pd.DataFrame,
-        knowledge=KnowledgeContext,
+        knowledge: KnowledgeContext,
     ) -> list[CategoricalColumnStatistics]:
         """
         Build descriptive statistics for ETL-detected categorical columns.
