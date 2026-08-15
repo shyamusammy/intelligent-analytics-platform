@@ -9,7 +9,7 @@ from app.repositories.dataset_repository import (
     DatasetRepository,
 )
 
-from app.services.etl.etl_pipeline import (
+from app.services.etl.pipeline.etl_pipeline import (
     ETLPipeline,
 )
 

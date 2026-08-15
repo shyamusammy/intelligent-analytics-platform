@@ -9,10 +9,14 @@ from tests.integration.pipeline_test_helper import (
 
 def main() -> None:
 
+    # ======================================================
+    # PREPARE TEST WORKSPACE
+    # ======================================================
+
     workspace_id, dataset_id = (
         PipelineTestHelper.prepare_workspace(
-            workspace_id="ws_full_pipeline",
-            workspace_name="Full Pipeline Test Workspace",
+            workspace_id="ws_platform_pipeline",
+            workspace_name="Platform Pipeline Integration Test",
             dataset_id="ds_sales",
             dataset_path=Path(
                 "tests/data/sales.xlsx"
@@ -23,7 +27,7 @@ def main() -> None:
     target_column = "Revenue"
 
     # ======================================================
-    # PLATFORM PIPELINE
+    # EXECUTE PLATFORM PIPELINE
     # ======================================================
 
     print()
@@ -39,11 +43,15 @@ def main() -> None:
         target_column=target_column,
     )
 
+    # ======================================================
+    # RESULT VALIDATION
+    # ======================================================
+
     assert result is not None
 
-    # ======================================================
-    # ETL VALIDATION
-    # ======================================================
+    # ------------------------------------------------------
+    # ETL
+    # ------------------------------------------------------
 
     assert result.etl is not None
 
@@ -51,9 +59,9 @@ def main() -> None:
 
     assert result.etl.quality is not None
 
-    # ======================================================
-    # ANALYTICS VALIDATION
-    # ======================================================
+    # ------------------------------------------------------
+    # ANALYTICS
+    # ------------------------------------------------------
 
     assert result.analytics is not None
 
@@ -67,9 +75,9 @@ def main() -> None:
 
     assert result.analytics.insights is not None
 
-    # ======================================================
-    # ML VALIDATION
-    # ======================================================
+    # ------------------------------------------------------
+    # ML
+    # ------------------------------------------------------
 
     assert result.ml is not None
 
@@ -87,46 +95,42 @@ def main() -> None:
     )
 
     # ======================================================
-    # PIPELINE SUMMARY
+    # SUMMARY
     # ======================================================
 
     print()
     print("=" * 70)
-    print("FULL PIPELINE VALIDATION")
+    print("PLATFORM PIPELINE SUMMARY")
     print("=" * 70)
 
     print(
-        "Workspace              : PASSED"
+        f"ETL Result              : PASSED"
     )
 
     print(
-        "Dataset Registration   : PASSED"
+        f"Analytics Result        : PASSED"
     )
 
     print(
-        "Platform Pipeline      : PASSED"
+        f"ML Validation           : PASSED"
     )
 
     print(
-        "ETL Stage              : PASSED"
+        f"ML Training             : PASSED"
     )
 
     print(
-        "Analytics Stage        : PASSED"
+        f"ML Evaluation           : PASSED"
     )
 
     print(
-        "ML Stage               : PASSED"
-    )
-
-    print(
-        f"Best Model             : "
+        f"Best Model              : "
         f"{result.ml.evaluation_result.best_model.trained_model.estimator.value}"
     )
 
     print()
     print("=" * 70)
-    print("FULL PLATFORM PIPELINE EXECUTED SUCCESSFULLY")
+    print("PLATFORM PIPELINE EXECUTED SUCCESSFULLY")
     print("=" * 70)
 
 
