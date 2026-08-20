@@ -28,6 +28,8 @@ class TrainedModel(BaseModel):
 
 class TrainResult(BaseModel):
     models: list[TrainedModel]
+    training_rows: int = 0
+    testing_rows: int = 0
 
 
 class RegressionMetrics(BaseModel):

@@ -101,6 +101,7 @@ class MLEngine:
         dataset_id: str,
         target_column: str,
         knowledge: KnowledgeContext,
+        use_cleaned_dataset: bool = False,
     ) -> MLEngineResult:
         """
         Execute the complete machine learning workflow.
@@ -109,6 +110,7 @@ class MLEngine:
         dataframe = self._load_dataset(
             workspace_id,
             dataset_id,
+            use_cleaned_dataset,
         )
 
         validation = self._validator.validate(
@@ -303,10 +305,17 @@ class MLEngine:
         self,
         workspace_id: str,
         dataset_id: str,
+        use_cleaned_dataset: bool = False,
     ):
         """
         Load the dataset into a pandas DataFrame.
         """
+
+        if use_cleaned_dataset:
+            return self._dataset_repository.load_cleaned_dataframe(
+                workspace_id,
+                dataset_id,
+            )
 
         return self._dataset_repository.load_dataframe(
             workspace_id,

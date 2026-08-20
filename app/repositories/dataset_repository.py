@@ -18,6 +18,7 @@ from app.core.exceptions import (
 )
 
 from app.schemas.dataset import DatasetMetadata
+from app.schemas.cleaning import CleaningReport
 
 
 class DatasetRepository:
@@ -246,6 +247,43 @@ class DatasetRepository:
         return self._read_dataframe(
             dataset_file,
         )
+
+    def save_cleaned_dataframe(
+        self,
+        workspace_id: str,
+        dataset_id: str,
+        dataframe: pd.DataFrame,
+    ) -> Path:
+        dataset_path = self.get_dataset_path(workspace_id, dataset_id)
+        cleaned_folder = dataset_path / DatasetFolders.CLEANED
+        cleaned_folder.mkdir(exist_ok=True)
+        cleaned_file = cleaned_folder / DatasetFiles.CLEANED_DATASET
+        dataframe.to_csv(cleaned_file, index=False)
+        return cleaned_file
+
+    def load_cleaned_dataframe(
+        self,
+        workspace_id: str,
+        dataset_id: str,
+    ) -> pd.DataFrame:
+        dataset_path = self.get_dataset_path(workspace_id, dataset_id)
+        cleaned_file = dataset_path / DatasetFolders.CLEANED / DatasetFiles.CLEANED_DATASET
+        if not cleaned_file.exists():
+            raise FileNotFoundError(f"Cleaned dataset not found: {cleaned_file}")
+        return pd.read_csv(cleaned_file)
+
+    def save_cleaning_report(
+        self,
+        workspace_id: str,
+        dataset_id: str,
+        report: CleaningReport,
+    ) -> Path:
+        dataset_path = self.get_dataset_path(workspace_id, dataset_id)
+        cleaned_folder = dataset_path / DatasetFolders.CLEANED
+        cleaned_folder.mkdir(exist_ok=True)
+        report_file = cleaned_folder / DatasetFiles.CLEANING_REPORT
+        report_file.write_text(report.model_dump_json(indent=2), encoding="utf-8")
+        return report_file
 
     # ==========================================================
     # PRIVATE

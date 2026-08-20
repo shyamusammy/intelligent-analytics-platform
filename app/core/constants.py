@@ -55,9 +55,15 @@ class ArtifactFolders:
 class DatasetFolders:
     ORIGINAL = "original"
 
+    CLEANED = "cleaned"
+
 
 class DatasetFiles:
     METADATA = "metadata.json"
+
+    CLEANED_DATASET = "cleaned_dataset.csv"
+
+    CLEANING_REPORT = "cleaning_report.json"
 
 
 # ==========================================================

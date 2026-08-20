@@ -30,20 +30,22 @@ class WorkspaceService:
 
         workspace_root = Path(WorkspaceFolders.ROOT)
 
-        existing = sorted(
-            [
-                folder.name
-                for folder in workspace_root.iterdir()
-                if folder.is_dir() and folder.name.startswith("ws_")
-            ]
-        )
+        workspace_root.mkdir(parents=True, exist_ok=True)
 
-        if not existing:
+        existing_numbers = [
+            int(folder.name.removeprefix("ws_"))
+            for folder in workspace_root.iterdir()
+            if (
+                folder.is_dir()
+                and folder.name.startswith("ws_")
+                and folder.name.removeprefix("ws_").isdigit()
+            )
+        ]
+
+        if not existing_numbers:
             return "ws_001"
 
-        last_workspace = existing[-1]
-
-        number = int(last_workspace.split("_")[1]) + 1
+        number = max(existing_numbers) + 1
 
         return f"ws_{number:03d}"
 

@@ -41,7 +41,9 @@ class ModelTrainer:
         )
 
         return TrainResult(
-            models=trained_models
+            models=trained_models,
+            training_rows=len(x_train),
+            testing_rows=len(x_test),
         )
 
     def _split_features_target(

@@ -100,9 +100,7 @@ class SegmentationService:
             ):
                 continue
 
-            counts = dataframe[column].value_counts(
-                dropna=False,
-            )
+            counts = dataframe[column].dropna().value_counts()
 
             for category, count in counts.items():
 

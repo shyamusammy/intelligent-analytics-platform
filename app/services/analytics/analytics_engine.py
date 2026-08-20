@@ -114,6 +114,7 @@ class AnalyticsEngine:
         self,
         workspace_id: str,
         dataset_id: str,
+        use_cleaned_dataset: bool = False,
     ) -> AnalyticsEngineResult:
         """
         Execute the complete analytics workflow.
@@ -122,6 +123,7 @@ class AnalyticsEngine:
         dataframe = self._load_dataset(
             workspace_id,
             dataset_id,
+            use_cleaned_dataset,
         )
 
         etl_profile = self._load_etl_profile(
@@ -152,10 +154,17 @@ class AnalyticsEngine:
         self,
         workspace_id: str,
         dataset_id: str,
+        use_cleaned_dataset: bool,
     ) -> pd.DataFrame:
         """
         Load the dataset into a pandas DataFrame.
         """
+
+        if use_cleaned_dataset:
+            return self._dataset_repository.load_cleaned_dataframe(
+                workspace_id,
+                dataset_id,
+            )
 
         return self._dataset_repository.load_dataframe(
             workspace_id,
