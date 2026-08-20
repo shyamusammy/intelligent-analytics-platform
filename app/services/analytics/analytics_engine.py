@@ -1,52 +1,17 @@
 import pandas as pd
 
-from app.repositories.profiling_repository import (
-    ProfilingRepository,
-)
+from app.repositories.dataset_repository import DatasetRepository
+from app.repositories.analytics_repository import AnalyticsRepository
 
-from app.schemas.context import (
-    KnowledgeContext,
-)
+from app.schemas.context import KnowledgeContext
+from app.schemas.analytics import AnalyticsEngineResult
 
-from app.schemas.etl import (
-    ETLProfile,
-)
-
-from app.repositories.dataset_repository import (
-    DatasetRepository,
-)
-
-from app.repositories.analytics_repository import (
-    AnalyticsRepository,
-)
-
-from app.services.analytics.statistics_service import (
-    StatisticsService,
-)
-
-from app.services.analytics.kpi_service import (
-    KPIService,
-)
-
-from app.services.analytics.correlation_service import (
-    CorrelationService,
-)
-
-from app.services.analytics.trend_service import (
-    TrendService,
-)
-
-from app.services.analytics.segmentation_service import (
-    SegmentationService,
-)
-
-from app.services.analytics.insight_service import (
-    InsightService,
-)
-
-from app.schemas.analytics import (
-    AnalyticsEngineResult,
-)
+from app.services.analytics.statistics_service import StatisticsService
+from app.services.analytics.kpi_service import KPIService
+from app.services.analytics.correlation_service import CorrelationService
+from app.services.analytics.trend_service import TrendService
+from app.services.analytics.segmentation_service import SegmentationService
+from app.services.analytics.insight_service import InsightService
 
 
 class AnalyticsEngine:
@@ -56,6 +21,7 @@ class AnalyticsEngine:
     Responsibilities
     ----------------
     - Load dataset
+    - Consume ETL knowledge from KnowledgeContext
     - Execute analytics services
     - Persist analytics artifacts
     - Return aggregated analytics result
@@ -67,7 +33,6 @@ class AnalyticsEngine:
         self,
         dataset_repository: DatasetRepository | None = None,
         analytics_repository: AnalyticsRepository | None = None,
-        profiling_repository: ProfilingRepository | None = None,
     ) -> None:
 
         self._dataset_repository = (
@@ -78,33 +43,12 @@ class AnalyticsEngine:
             analytics_repository or AnalyticsRepository()
         )
 
-        self._profiling_repository = (
-            profiling_repository or ProfilingRepository()
-        )
-
-        self._statistics_service = (
-            StatisticsService()
-        )
-
-        self._kpi_service = (
-            KPIService()
-        )
-
-        self._correlation_service = (
-            CorrelationService()
-        )
-
-        self._segmentation_service = (
-            SegmentationService()
-        )
-
-        self._trend_service = (
-            TrendService()
-        )
-
-        self._insight_service = (
-            InsightService()
-        )
+        self._statistics_service = StatisticsService()
+        self._kpi_service = KPIService()
+        self._correlation_service = CorrelationService()
+        self._segmentation_service = SegmentationService()
+        self._trend_service = TrendService()
+        self._insight_service = InsightService()
 
     # ==========================================================
     # PUBLIC
@@ -114,24 +58,20 @@ class AnalyticsEngine:
         self,
         workspace_id: str,
         dataset_id: str,
+        knowledge: KnowledgeContext,
         use_cleaned_dataset: bool = False,
     ) -> AnalyticsEngineResult:
         """
         Execute the complete analytics workflow.
+
+        Analytics consumes ETL knowledge provided through
+        KnowledgeContext by the PlatformPipeline.
         """
 
         dataframe = self._load_dataset(
             workspace_id,
             dataset_id,
             use_cleaned_dataset,
-        )
-
-        etl_profile = self._load_etl_profile(
-            workspace_id,
-        )
-
-        knowledge = self._create_knowledge_context(
-            etl_profile,
         )
 
         result = self._run_analytics(
@@ -157,7 +97,7 @@ class AnalyticsEngine:
         use_cleaned_dataset: bool,
     ) -> pd.DataFrame:
         """
-        Load the dataset into a pandas DataFrame.
+        Load the appropriate dataset into a pandas DataFrame.
         """
 
         if use_cleaned_dataset:
@@ -177,50 +117,39 @@ class AnalyticsEngine:
         knowledge: KnowledgeContext,
     ) -> AnalyticsEngineResult:
         """
-        Execute all analytics services.
+        Execute all analytics services using shared ETL knowledge.
         """
-        statistics = (
-            self._statistics_service.run(
-                dataframe= dataframe,
-                knowledge= knowledge,
-            )
+
+        statistics = self._statistics_service.run(
+            dataframe=dataframe,
+            knowledge=knowledge,
         )
 
-        kpis = (
-            self._kpi_service.run(
-                dataframe,
-            )
+        kpis = self._kpi_service.run(
+            dataframe,
         )
 
-        correlations = (
-            self._correlation_service.run(
-                dataframe=dataframe,
-                knowledge=knowledge,
-            )
+        correlations = self._correlation_service.run(
+            dataframe=dataframe,
+            knowledge=knowledge,
         )
 
-        trends = (
-            self._trend_service.run(
-                dataframe=dataframe,
-                knowledge=knowledge,
-            )
+        trends = self._trend_service.run(
+            dataframe=dataframe,
+            knowledge=knowledge,
         )
 
-        segmentation = (
-            self._segmentation_service.run(
-                dataframe=dataframe,
-                knowledge=knowledge,
-            )
+        segmentation = self._segmentation_service.run(
+            dataframe=dataframe,
+            knowledge=knowledge,
         )
 
-        insights = (
-            self._insight_service.run(
-                statistics=statistics,
-                kpis=kpis,
-                correlations=correlations,
-                trends=trends,
-                segmentation=segmentation,
-            )
+        insights = self._insight_service.run(
+            statistics=statistics,
+            kpis=kpis,
+            correlations=correlations,
+            trends=trends,
+            segmentation=segmentation,
         )
 
         return AnalyticsEngineResult(
@@ -244,28 +173,4 @@ class AnalyticsEngine:
         self._analytics_repository.save(
             workspace_id,
             result,
-        )
-
-    def _load_etl_profile(
-        self,
-        workspace_id: str,
-    ) -> ETLProfile:
-        """
-        Load the ETL profile generated during the ETL stage.
-        """
-
-        return self._profiling_repository.load(
-            workspace_id,
-        )
-
-    def _create_knowledge_context(
-        self,
-        etl_profile: ETLProfile,
-    ) -> KnowledgeContext:
-        """
-        Create the shared knowledge context for downstream services.
-        """
-
-        return KnowledgeContext(
-            etl_profile=etl_profile,
         )
