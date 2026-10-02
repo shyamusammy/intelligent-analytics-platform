@@ -144,6 +144,12 @@ class MLConstants:
     RANDOM_STATE = 42
 
 
+class FeatureEngineeringConstants:
+    HIGH_CARDINALITY_THRESHOLD = 50
+    NEAR_CONSTANT_RATIO = 0.98
+    MAX_FEATURES = 300
+
+
 # ==========================================================
 # Analytics Artifacts
 # ==========================================================

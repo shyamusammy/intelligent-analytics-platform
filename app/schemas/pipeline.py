@@ -5,6 +5,7 @@ from app.schemas.etl import ETLProfile
 from app.schemas.ml import MLEngineResult
 from app.schemas.cleaning import CleaningReport
 from app.schemas.dashboard import DashboardResult
+from app.schemas.feature_engineering import FeatureEngineeringReport
 
 
 class PlatformPipelineResult(BaseModel):
@@ -13,6 +14,7 @@ class PlatformPipelineResult(BaseModel):
     analytics: AnalyticsEngineResult
     ml: MLEngineResult | None = None
     dashboard: DashboardResult | None = None
+    feature_engineering: FeatureEngineeringReport | None = None
     status: str = "success"
     warnings: list[str] = []
 

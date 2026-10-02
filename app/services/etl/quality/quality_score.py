@@ -9,6 +9,14 @@ from app.schemas.etl import (
 class QualityScoreService:
     """
     Computes an overall data quality score.
+
+    The quality score is based on:
+    - Missing-value percentage
+    - Duplicate-row percentage
+    - Percentage of rows affected by outliers
+
+    Outlier occurrences across multiple columns are not
+    counted as separate rows for the outlier penalty.
     """
 
     def calculate(
@@ -19,30 +27,45 @@ class QualityScoreService:
         duplicates: DuplicateSummary,
         outliers: OutlierSummary,
     ) -> QualityProfile:
+        # ---------------------------------------------------------
+        # Missing-value penalty
+        # ---------------------------------------------------------
 
-        total_cells = total_rows * total_columns
+        total_cells = (
+            total_rows * total_columns
+        )
 
         missing_penalty = 0.0
 
         if total_cells:
-
             missing_penalty = (
                 missing.total_missing_values
                 / total_cells
             ) * 100
 
+        # ---------------------------------------------------------
+        # Duplicate penalty
+        # ---------------------------------------------------------
+
         duplicate_penalty = (
             duplicates.duplicate_percentage
         )
 
+        # ---------------------------------------------------------
+        # Outlier penalty
+        # ---------------------------------------------------------
+
         outlier_penalty = 0.0
 
         if total_rows:
-
             outlier_penalty = (
-                outliers.total_outliers
+                outliers.affected_rows
                 / total_rows
             ) * 100
+
+        # ---------------------------------------------------------
+        # Final quality score
+        # ---------------------------------------------------------
 
         score = max(
             0.0,
@@ -56,19 +79,15 @@ class QualityScoreService:
         )
 
         return QualityProfile(
-
             quality_score=score,
-
             missing_penalty=round(
                 missing_penalty,
                 2,
             ),
-
             duplicate_penalty=round(
                 duplicate_penalty,
                 2,
             ),
-
             outlier_penalty=round(
                 outlier_penalty,
                 2,

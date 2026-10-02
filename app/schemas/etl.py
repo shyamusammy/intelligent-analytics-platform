@@ -91,6 +91,8 @@ class OutlierSummary(BaseModel):
     total_outliers: int
 
     outliers_by_column: dict[str, int]
+    affected_rows: int
+
 
 
 class QualityProfile(BaseModel):

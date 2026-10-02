@@ -16,6 +16,7 @@ def ml_result_response(result: MLEngineResult) -> dict:
         "testing_rows": result.train_result.testing_rows if result.train_result else 0,
         "evaluations": [],
         "best_model": None,
+        "feature_engineering": result.feature_engineering.model_dump(mode="json") if result.feature_engineering else None,
     }
 
     if not result.evaluation_result:
@@ -47,6 +48,7 @@ def platform_result_response(result: PlatformPipelineResult) -> dict:
         "analytics": result.analytics.model_dump(mode="json"),
         "ml": ml_result_response(result.ml) if result.ml else None,
         "dashboard": result.dashboard.model_dump(mode="json") if result.dashboard else None,
+        "feature_engineering": result.feature_engineering.model_dump(mode="json") if result.feature_engineering else None,
         "status": result.status,
         "warnings": result.warnings,
     }

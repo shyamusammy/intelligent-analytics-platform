@@ -1377,9 +1377,19 @@ if result:
                     {},
                 )
 
+                prominent_metrics = {
+                    name: value
+                    for name, value in best_metrics.items()
+                    if str(name).strip().lower()
+                    not in {"mse", "mean_squared_error"}
+                }
+
                 best_cols[1].write(
-                    best_metrics
+                    prominent_metrics
                 )
+
+                with st.expander("Technical Details"):
+                    st.json(best_metrics)
 
 
     # ========================================================

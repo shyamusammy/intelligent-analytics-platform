@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from app.core.enums import MLEstimator
 from pydantic import Field
 from app.core.enums import MLTaskType
+from app.schemas.feature_engineering import FeatureEngineeringReport
 
 
 class ValidationResult(BaseModel):
@@ -69,3 +70,5 @@ class MLEngineResult(BaseModel):
     train_result: TrainResult | None = None
 
     evaluation_result: EvaluationResult | None = None
+
+    feature_engineering: FeatureEngineeringReport | None = None

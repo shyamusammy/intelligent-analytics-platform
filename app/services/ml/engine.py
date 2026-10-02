@@ -38,6 +38,8 @@ from app.services.ml.validator import (
 from app.services.ml.preprocessor import (
     MLPreprocessor,
 )
+from app.services.ml.splitter import DatasetSplitter
+from app.services.feature_engineering import FeatureEngineeringEngine
 
 from app.schemas.context import (
     KnowledgeContext,
@@ -82,6 +84,8 @@ class MLEngine:
         self._validator = MLValidator()
 
         self._preprocessor = MLPreprocessor()
+        self._splitter = DatasetSplitter()
+        self._feature_engineering = FeatureEngineeringEngine()
 
         self._detector = MLDetector()
 
@@ -126,13 +130,9 @@ class MLEngine:
 
         evaluation_result = None
 
-        if validation.valid:
+        feature_report = None
 
-            dataframe = self._preprocessor.prepare(
-                dataframe=dataframe,
-                target_column=target_column,
-                knowledge=knowledge,
-            )
+        if validation.valid:
 
             task_type = self._detector.detect(
                 dataframe=dataframe,
@@ -143,11 +143,11 @@ class MLEngine:
                 task_type=task_type,
             )
 
-            train_result = self._trainer.train(
-                dataframe=dataframe,
-                target_column=target_column,
-                estimators=estimators,
-            )
+            x_train, x_test, y_train, y_test = self._splitter.split(dataframe, target_column)
+            x_train = self._feature_engineering.fit_transform(x_train, target_column, knowledge)
+            x_test = self._feature_engineering.transform(x_test, target_column)
+            feature_report = self._feature_engineering.report
+            train_result = self._trainer.train_from_split(x_train, x_test, y_train, y_test, estimators)
 
             evaluation_result = self._evaluator.evaluate(
                 task_type=task_type,
@@ -168,6 +168,7 @@ class MLEngine:
             estimators=estimators,
             train_result=train_result,
             evaluation_result=evaluation_result,
+            feature_engineering=feature_report,
         )
 
     # ==========================================================

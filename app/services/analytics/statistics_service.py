@@ -1,20 +1,17 @@
+"""
+Intelligent Analytics Platform
+Descriptive statistics service.
+"""
+import math
 import pandas as pd
 
-from pandas.api.types import (
-    is_numeric_dtype,
-)
-
-from app.schemas.context import (
-    KnowledgeContext,
-)
-
+from app.schemas.context import KnowledgeContext
 from app.schemas.analytics import (
     CategoricalColumnStatistics,
     DatasetSummary,
     NumericColumnStatistics,
     StatisticsResult,
 )
-
 from app.services.analytics.helpers.etl_schema_helper import (
     ETLSchemaHelper,
 )
@@ -31,6 +28,7 @@ class StatisticsService:
     - Numeric column statistics
     - Categorical column statistics
 
+    The ETL profile is the authoritative source for column types.
     This service contains NO persistence logic.
     """
 
@@ -53,7 +51,8 @@ class StatisticsService:
                 knowledge=knowledge,
             ),
             numeric_statistics=self._build_numeric_statistics(
-                dataframe,
+                dataframe=dataframe,
+                knowledge=knowledge,
             ),
             categorical_statistics=self._build_categorical_statistics(
                 dataframe=dataframe,
@@ -62,7 +61,7 @@ class StatisticsService:
         )
 
     # ==========================================================
-    # PRIVATE
+    # DATASET SUMMARY
     # ==========================================================
 
     def _build_dataset_summary(
@@ -71,7 +70,11 @@ class StatisticsService:
         knowledge: KnowledgeContext,
     ) -> DatasetSummary:
         """
-        Build overall dataset summary using the ETL profile.
+        Build overall dataset summary.
+
+        Column type classification is based on the ETL profile,
+        while row-level dataset metrics are calculated from the
+        dataframe being analyzed.
         """
 
         numeric_columns = len(
@@ -92,11 +95,7 @@ class StatisticsService:
             )
         )
 
-        datetime_columns = (
-            1
-            if datetime_column
-            else 0
-        )
+        datetime_columns = 1 if datetime_column else 0
 
         text_columns = len(
             ETLSchemaHelper.get_text_columns(
@@ -104,56 +103,58 @@ class StatisticsService:
             )
         )
 
-
         return DatasetSummary(
             total_rows=len(dataframe),
-
             total_columns=(
                 knowledge.etl_profile
                 .schema_profile
                 .total_columns
             ),
-
             numeric_columns=numeric_columns,
-
             categorical_columns=categorical_columns,
-
             datetime_columns=datetime_columns,
-
             text_columns=text_columns,
-
-            missing_cells=(
-                knowledge.etl_profile
-                .missing_values
-                .total_missing_values
+            missing_cells=int(
+                dataframe.isna().sum().sum()
             ),
-
-            duplicate_rows=(
-                knowledge.etl_profile
-                .duplicates
-                .duplicate_rows
+            duplicate_rows=int(
+                dataframe.duplicated().sum()
             ),
         )
+
+    # ==========================================================
+    # NUMERIC STATISTICS
+    # ==========================================================
 
     def _build_numeric_statistics(
         self,
         dataframe: pd.DataFrame,
+        knowledge: KnowledgeContext,
     ) -> list[NumericColumnStatistics]:
         """
-        Build descriptive statistics for numeric columns.
+        Build descriptive statistics for ETL-detected
+        numeric columns.
+
+        The ETL schema is the authoritative source for
+        determining which columns are numeric.
         """
 
-        statistics: list[
-            NumericColumnStatistics
-        ] = []
+        statistics: list[NumericColumnStatistics] = []
 
-        numeric_dataframe = dataframe.select_dtypes(
-            include=["number"],
+        numeric_columns = (
+            ETLSchemaHelper.get_numeric_columns(
+                knowledge.etl_profile,
+            )
         )
 
-        for column in numeric_dataframe.columns:
+        for column in numeric_columns:
 
-            series = numeric_dataframe[column]
+            # Protect against columns removed or renamed
+            # after the ETL profile was generated.
+            if column not in dataframe.columns:
+                continue
+
+            series = dataframe[column]
 
             statistics.append(
                 NumericColumnStatistics(
@@ -187,13 +188,18 @@ class StatisticsService:
 
         return statistics
 
+    # ==========================================================
+    # CATEGORICAL STATISTICS
+    # ==========================================================
+
     def _build_categorical_statistics(
         self,
         dataframe: pd.DataFrame,
         knowledge: KnowledgeContext,
     ) -> list[CategoricalColumnStatistics]:
         """
-        Build descriptive statistics for ETL-detected categorical columns.
+        Build descriptive statistics for ETL-detected
+        categorical columns.
         """
 
         statistics: list[
@@ -207,7 +213,7 @@ class StatisticsService:
         )
 
         for column in categorical_columns:
-            
+
             if column not in dataframe.columns:
                 continue
 
@@ -218,12 +224,10 @@ class StatisticsService:
             )
 
             if mode.empty:
-
                 most_frequent = None
                 most_frequent_count = None
 
             else:
-
                 value_counts = series.value_counts(
                     dropna=True,
                 )
@@ -251,16 +255,30 @@ class StatisticsService:
 
         return statistics
 
-    def _safe_float(
-        self,
-        value: object,
-    ) -> float:
+    # ==========================================================
+    # HELPERS
+    # ==========================================================
+    @staticmethod
+    def _safe_float(value) -> float | None:
         """
-        Convert NaN values to 0.0.
+        Safely convert a numeric value to a finite Python float.
+
+        Returns None for:
+        - None
+        - NaN
+        - positive/negative infinity
+        - non-numeric values
         """
 
-        if pd.isna(value):
+        if value is None:
+            return None
 
-            return 0.0
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            return None
 
-        return float(value)
+        if not math.isfinite(value):
+            return None
+
+        return value

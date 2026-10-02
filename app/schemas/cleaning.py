@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from app.schemas.etl import OutlierSummary
+
 
 class CleaningAction(BaseModel):
     column_name: str
@@ -10,12 +12,32 @@ class CleaningAction(BaseModel):
 class CleaningReport(BaseModel):
     original_row_count: int
     cleaned_row_count: int
+
     duplicates_removed: int
+
     missing_values_before: int
     missing_values_after: int
+
     duplicate_rows_after: int
+
+    # ---------------------------------------------------------
+    # Outlier information
+    #
+    # Detection only.
+    # Outliers are NOT automatically removed.
+    # ---------------------------------------------------------
+    outliers_before: OutlierSummary
+    outliers_after: OutlierSummary
+
     quality_score_before: float
     quality_score_after: float
-    columns_affected: list[str] = Field(default_factory=list)
-    actions: list[CleaningAction] = Field(default_factory=list)
+
+    columns_affected: list[str] = Field(
+        default_factory=list
+    )
+
+    actions: list[CleaningAction] = Field(
+        default_factory=list
+    )
+
     cleaned_dataset_path: str

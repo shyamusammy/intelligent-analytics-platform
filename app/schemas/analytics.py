@@ -31,17 +31,17 @@ class DatasetSummary(BaseModel):
 class NumericColumnStatistics(BaseModel):
     column_name: str
 
-    mean: float
-    median: float
+    mean: float | None
+    median: float | None
 
-    minimum: float
-    maximum: float
+    minimum: float | None
+    maximum: float | None
 
-    std_dev: float
-    variance: float
+    std_dev: float | None
+    variance: float | None
 
-    skewness: float
-    kurtosis: float
+    skewness: float | None
+    kurtosis: float | None
 
 
 class CategoricalColumnStatistics(BaseModel):

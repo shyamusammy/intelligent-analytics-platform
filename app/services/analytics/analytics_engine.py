@@ -2,6 +2,7 @@ import pandas as pd
 
 from app.repositories.dataset_repository import DatasetRepository
 from app.repositories.analytics_repository import AnalyticsRepository
+from app.repositories.profiling_repository import ProfilingRepository
 
 from app.schemas.context import KnowledgeContext
 from app.schemas.analytics import AnalyticsEngineResult
@@ -58,7 +59,7 @@ class AnalyticsEngine:
         self,
         workspace_id: str,
         dataset_id: str,
-        knowledge: KnowledgeContext,
+        knowledge: KnowledgeContext | None = None,
         use_cleaned_dataset: bool = False,
     ) -> AnalyticsEngineResult:
         """
@@ -67,6 +68,11 @@ class AnalyticsEngine:
         Analytics consumes ETL knowledge provided through
         KnowledgeContext by the PlatformPipeline.
         """
+
+        if knowledge is None:
+            knowledge = KnowledgeContext(
+                etl_profile=ProfilingRepository().load(workspace_id),
+            )
 
         dataframe = self._load_dataset(
             workspace_id,

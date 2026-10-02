@@ -46,6 +46,21 @@ class ModelTrainer:
             testing_rows=len(x_test),
         )
 
+    def train_from_split(
+        self,
+        x_train: DataFrame,
+        x_test: DataFrame,
+        y_train: Series,
+        y_test: Series,
+        estimators: list[MLEstimator],
+    ) -> TrainResult:
+        """Train existing estimators from externally prepared holdout data."""
+        return TrainResult(
+            models=self._train_models(x_train, x_test, y_train, y_test, estimators),
+            training_rows=len(x_train),
+            testing_rows=len(x_test),
+        )
+
     def _split_features_target(
         self,
         dataframe: DataFrame,

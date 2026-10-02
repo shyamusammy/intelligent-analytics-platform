@@ -165,6 +165,7 @@ class PlatformPipeline:
 
             # Add ML knowledge to the shared context
             knowledge.ml_result = ml_result
+            knowledge.feature_engineering = ml_result.feature_engineering
 
             if not ml_result.validation.valid:
                 warnings.append(
@@ -197,6 +198,7 @@ class PlatformPipeline:
             analytics=analytics_result,
             ml=ml_result,
             dashboard=dashboard_result,
+            feature_engineering=knowledge.feature_engineering,
             status=(
                 "success_with_warnings"
                 if warnings

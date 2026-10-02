@@ -14,6 +14,14 @@ from styles.theme import COLORS
 # HELPERS
 # ============================================================
 
+def _render_html(content: str) -> None:
+    """Render component markup without exposing it as literal text."""
+
+    try:
+        st.html(content)
+    except AttributeError:
+        st.markdown(content, unsafe_allow_html=True)
+
 SEVERITY_CONFIG = {
     "critical": {
         "color": COLORS["danger"],
@@ -198,7 +206,7 @@ def render_insight(
         </div>
         """
 
-    st.markdown(
+    _render_html(
         f"""
         <div style="
             background: {COLORS["surface"]};
@@ -281,7 +289,6 @@ def render_insight(
 
         </div>
         """,
-        unsafe_allow_html=True,
     )
 
 
@@ -362,7 +369,7 @@ def render_executive_summary(
 ) -> None:
     """Render a prominent executive-level summary."""
 
-    st.markdown(
+    _render_html(
         f"""
         <div style="
             background: linear-gradient(
@@ -397,7 +404,6 @@ def render_executive_summary(
 
         </div>
         """,
-        unsafe_allow_html=True,
     )
 
 
@@ -449,7 +455,7 @@ def render_insight_summary(
 
         with col:
 
-            st.markdown(
+            _render_html(
                 f"""
                 <div style="
                     background: {background};
@@ -476,5 +482,4 @@ def render_insight_summary(
 
                 </div>
                 """,
-                unsafe_allow_html=True,
             )

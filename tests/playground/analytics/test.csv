@@ -1,0 +1,7 @@
+age,salary,department,description,constant,all_null
+20,30000,Sales,employee one,1,
+25,35000,Sales,,1,
+,40000,,employee three,1,
+30,45000,IT,employee four,1,
+35,,IT,employee five,1,
+40,500000,HR,employee six,1,
